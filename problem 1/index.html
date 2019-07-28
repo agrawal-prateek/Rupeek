@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta charset="utf-8" />
+    <title>Problem 1</title>
+    <style>
+      table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 50%;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 20%;
+      }
+
+      td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+      }
+
+      tr:nth-child(even) {
+        /*background-color: #dddddd;*/
+      }
+    </style>
+    <script src="../lib/jquery-3.4.1.min.js"></script>
+  </head>
+  <body>
+    <table>
+      <tr>
+        <td>Total Distance</td>
+        <td><span id="total-distance"></span> meters</td>
+      </tr>
+      <tr>
+        <td>Max Speed</td>
+        <td><span id="max-speed"></span> meter/second</td>
+      </tr>
+      <tr>
+        <td>Average Speed</td>
+        <td><span id="avg-speed"></span> meters/second</td>
+      </tr>
+      <tr>
+        <td>Elevation Gained</td>
+        <td><span id="elevation"></span> meters</td>
+      </tr>
+    </table>
+
+    <script>
+      function distance(point1, point2) {
+        const R = 6371000;
+        var degToRad = Math.PI / 180;
+        return (
+          R *
+          degToRad *
+          Math.sqrt(
+            Math.pow(
+              Math.cos(point1.lat * degToRad) * (point1.lng - point2.lng),
+              2
+            ) + Math.pow(point1.lat - point2.lat, 2)
+          )
+        );
+      }
+      $(document).ready(function() {
+        $.ajax({
+          type: "GET",
+          url: "../lib/Problem.xml",
+          dataType: "xml",
+          success: function(xml) {
+            let points = [];
+            let trkpt = $(xml).find("trkpt");
+            let distancesSum = 0,
+              dist;
+            let maxSpeed = -1,
+              avgSpeed = 0,
+              speed;
+            let elevation=0;
+
+            for (i = 0; i < trkpt.length - 2; i++) {
+              dist = distance(
+                {
+                  lat: parseFloat($(trkpt[i]).attr("lat")),
+                  lng: parseFloat($(trkpt[i]).attr("lon"))
+                },
+                {
+                  lat: parseFloat($(trkpt[i + 1]).attr("lat")),
+                  lng: parseFloat($(trkpt[i + 1]).attr("lon"))
+                }
+              );
+              distancesSum += dist;
+              speed =
+                dist /
+                ((new Date(
+                  $(trkpt[i + 1])
+                    .find("time")
+                    .text()
+                ) -
+                  new Date(
+                    $(trkpt[i])
+                      .find("time")
+                      .text()
+                  )) /
+                  1000);
+              if (speed > maxSpeed) maxSpeed = speed;
+              avgSpeed += speed;
+              elevation += parseFloat($(trkpt[i]).find('ele').text())-parseFloat($(trkpt[i+1]).find('ele').text())
+            }
+            avgSpeed /= trkpt.length;
+            $("#total-distance").html(distancesSum);
+            $("#max-speed").html(maxSpeed);
+            $("#avg-speed").html(avgSpeed);
+            $("#elevation").html(elevation);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

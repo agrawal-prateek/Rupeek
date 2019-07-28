@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta charset="utf-8" />
+    <title>Problem 2</title>
+    <style>
+      #map {
+        height: 100%;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <script src="../lib/jquery-3.4.1.min.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      function load_data(callback) {
+        $.ajax({
+          type: "GET",
+          url: "../lib/Problem.xml",
+          dataType: "xml",
+          success: function(xml) {
+            let flightPlanCoordinates = [];
+            let trkpt = $(xml).find("trkpt");
+            let avglat = 0,
+              avglon = 0,
+              count = 0;
+
+            trkpt.each(function() {
+              flightPlanCoordinates.push({
+                lat: parseFloat($(this).attr("lat")),
+                lng: parseFloat($(this).attr("lon"))
+              });
+              avglat += parseFloat($(this).attr("lat"));
+              avglon += parseFloat($(this).attr("lon"));
+              count++;
+            });
+
+            callback(flightPlanCoordinates, avglat / count, avglon / count);
+          }
+        });
+      }
+      function initMap() {
+        load_data(function(flightPlanCoordinates, avglat, avglon) {
+          var map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 10,
+            center: { lat: avglat, lng: avglon },
+            mapTypeId: "terrain"
+          });
+
+          var flightPath = new google.maps.Polyline({
+            path: flightPlanCoordinates,
+            geodesic: true,
+            strokeColor: "#FF0000",
+            strokeOpacity: 1.0,
+            strokeWeight: 3
+          });
+          flightPath.setMap(map);
+        });
+      }
+    </script>
+    <script
+      async
+      defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB0jV-nqybXd07XgPVhLBduJAoE_zrG1jI&callback=initMap"
+    ></script>
+  </body>
+</html>
